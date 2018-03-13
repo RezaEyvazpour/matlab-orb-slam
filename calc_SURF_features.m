@@ -8,6 +8,7 @@ for s = 0:21
     features = cell(n_images, 1);
     validPoints = cell(n_images, 1);
     
+    fprintf(['Calculating SURF features for sequence `', num2str(s, '%02d'), '` ...\n'])
     parfor k = 1:n_images
         path = [files(k).folder, '/', files(k).name];
         img = imread(path);
