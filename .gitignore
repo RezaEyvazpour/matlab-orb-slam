@@ -1,1 +1,2 @@
-dataset/sequences/*/*/*.png
+*.m~  # osx autosave
+*.asv # windows autosave
