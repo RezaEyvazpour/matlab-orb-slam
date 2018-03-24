@@ -33,6 +33,7 @@ State.Sigma = zeros(length(State.mu));
 global Params;
 Params.theta = 15; % Number of shared observations a keyframe must have to be considered the same map points
 Params.theta_min = 100; % Defines high covisability for spanning tree
+Params.keyFramePercentOfBestScoreThreshold = 75; % bag of words returns keyframes that are more than this percentage of the best match
 
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
