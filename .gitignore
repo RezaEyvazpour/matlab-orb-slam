@@ -1,2 +1,2 @@
-*.m~  # osx autosave
-*.asv # windows autosave
+**/*.m~  # osx autosave
+**/*.asv # windows autosave
