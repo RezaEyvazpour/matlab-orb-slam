@@ -1,26 +1,23 @@
-function orb_slam(frame_curr)
+function orb_slam()
 
 global Map
 global State
 global Params
 global Debug
+global Data
 
-persistent isMapInitialized
-if isempty(isMapInitialized)
-    isMapInitialized = false;
+
+if ~State.isInitialized
+    State.isInitialized = initialize_map();
+else
+    keyFrame = tracking(Data.prevFrame, Data.currFrame);
+    local_mapping(keyFrame);
+    loop_closing(keyFrame);
 end
 
-persistent frame_prev
-if ~isempty(frame_prev)
-    if isMapInitialized
-        frame_ref = frame_prev;
-        isMapInitialized = initialize_map(frame_ref, frame_curr);
-    else
-        keyFrame = tracking(frame_prev, frame_curr);
-        local_mapping(keyFrame);
-        loop_closing(keyFrame);
-    end
-end
-frame_prev = frame_curr;
+Data.frameIdx = Data.frameIdx + 1;
+Data.prevFrame = Data.currFrame;
+Data.currFrame = imread([Data.files(Data.frameIdx).folder, ...
+    '/', Data.files(Data.frameIdx).name]);
 end
 
