@@ -6,6 +6,10 @@ global Params
 global Debug
 global Data
 
+points = detectSURFFeatures(Data.currFrame);
+[Data.Surf.features{Data.frameIdx}, Data.Surf.points{Data.frameIdx}] = ...
+    extractFeatures(Data.currFrame, points);
+
 
 if ~State.isInitialized
     State.isInitialized = initialize_map();

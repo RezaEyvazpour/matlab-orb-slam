@@ -15,10 +15,6 @@ global Data
 
 tic
 
-points = detectSURFFeatures(Data.currFrame);
-[Data.Surf.features{Data.frameIdx}, Data.Surf.points{Data.frameIdx}] = ...
-    extractFeatures(Data.currFrame, points);
-
 features1 = Data.Surf.features{Data.frameIdx - 1};
 points1 = Data.Surf.points{Data.frameIdx - 1};
 features2 = Data.Surf.features{Data.frameIdx};
