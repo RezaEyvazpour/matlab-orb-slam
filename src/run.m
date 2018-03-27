@@ -22,8 +22,27 @@ imageExt = '.jpg';
 
 global Map;
 Map.mapPoints = [];
+	% Contains
+	%	1) pose3D
+	%	2) viewing direction (average of all viewing directions)
+	%	3) Descriptor
+	%	4) dmax and dmin, determined by invariance limits of SURF
+	% and (I suggest) number of times observed (for viewing direction)
+	%
+	% Make a function to create new mapPoints
+
 Map.keyFrames = [];
+	% Contains
+	%	1) Camera pose T_iw: rigid body transformation from world to camera
+	%	2) Camera intrinsics: focal length, principal point)
+	%	3) All features extracted in that frame, associated with or not to a map point
+	%
+	% Make a function to create new keyFrames
+
 Map.covisibilityGraph = [];
+	% An undirected graph where nodes are keyframes and edges are shared
+	% observations of map points (at least theta)
+	
 Map.spanningTree = []; % Subset of the essential graph that contains edges with high covisability (theta_min)
 
 global State;
