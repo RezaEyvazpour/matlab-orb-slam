@@ -1,27 +1,25 @@
-function orb_slam()
+function orb_slam(prevFrame, currFrame)
 
 global Map
 global State
 global Params
 global Debug
-global Data
 
-points = detectSURFFeatures(Data.currFrame);
-[Data.Surf.features{Data.frameIdx}, Data.Surf.points{Data.frameIdx}] = ...
-    extractFeatures(Data.currFrame, points);
 
+[prevFeatures, prevPoints] = extract_features(prevFrame);
+[currFeatures, currPoints] = extract_features(currFrame);
+
+matchedIdx = matchFeatures(prevFeatures, currFeatures);
+prevMatchedPoints = prevPoints(matchedIdx(:, 1), :);
+currMatchedPoints = currPoints(matchedIdx(:, 2), :);
 
 if ~State.isInitialized
-    State.isInitialized = initialize_map();
+    State.isInitialized = initialize_map(prevMatchedPoints, currMatchedPoints);
 else
-    keyFrame = tracking(Data.prevFrame, Data.currFrame);
+    keyFrame = tracking(prevFrame, currFrame);
     local_mapping(keyFrame);
     loop_closing(keyFrame);
 end
 
-Data.frameIdx = Data.frameIdx + 1;
-Data.prevFrame = Data.currFrame;
-Data.currFrame = imread([Data.files(Data.frameIdx).folder, ...
-    '/', Data.files(Data.frameIdx).name]);
 end
 

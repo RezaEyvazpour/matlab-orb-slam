@@ -2,6 +2,17 @@ clear all;
 close all;
 clc;
 
+%% User setup
+seq = 4;
+
+imageDir = num2str(seq, '../dataset/sequences/%02d/image_0');
+imageExt = '.png';
+
+imageFiles = dir([imageDir, '/*', imageExt]);
+
+calibFile = num2str(seq, '../dataset/sequences/%02d/calib.txt');
+cameraID = 0;
+
 %% Get feature vocabulary
 
 % if no vocabulary exists
@@ -34,37 +45,16 @@ Params.keyFramePercentOfBestScoreThreshold = 75; % bag of words returns keyframe
 % ADD angle threshold between v and n
 % ADD scale invariance region - perhaps set from data set
 
-Params.maxRansacIter = 100;
-
+Params.cameraParams = load_camera_params(calibFile, cameraID);
 
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
 Debug.displayFeaturesOnImages = false;
 
-%% User setup
-global Data
-Data.dir = '../dataset/sequences/04/image_0';
-Data.ext = '.png';
-Data.height = 370;
-Data.width = 1226;
-
-Data.files = dir([Data.dir, '/*', Data.ext]);
-
-Data.numFrames = length(Data.files);
-
-Data.prevFrame = imread([Data.files(1).folder, '/', Data.files(1).name]);
-Data.currFrame = imread([Data.files(2).folder, '/', Data.files(2).name]);
-Data.frameIdx = 2;
-
-Data.Surf.features = {};
-Data.Surf.points = {};
-
-points = detectSURFFeatures(Data.prevFrame);
-[Data.Surf.features{1}, Data.Surf.points{1}] = extractFeatures(Data.prevFrame, points);
-
 %% Run ORB-SLAM
 
-
-for i = 1:(Data.numFrames - 1)
-	orb_slam();
+for i = 1:(length(imageFiles) - 1)
+    prevFrame = imread([imageFiles(i).folder, '/', imageFiles(i).name]);
+    currFrame = imread([imageFiles(i + 1).folder, '/', imageFiles(i + 1).name]);
+	orb_slam(prevFrame, currFrame);
 end
