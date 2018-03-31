@@ -4,8 +4,13 @@ clc;
 
 %% User setup
 
-imageDir = 'images';
-imageExt = '.jpg';
+sequence = 4;
+
+imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
+imageExt = '.png';
+
+calibFile = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'calib.txt'];
+cameraID = 0;
 
 %% Get feature vocabulary
 
@@ -39,7 +44,7 @@ Map.keyFrames = [];
 	%
 	% Make a function to create new keyFrames
 
-Map.covisibilityGraph = [];
+Map.covisibilityGraph = viewSet();
 	% An undirected graph where nodes are keyframes and edges are shared
 	% observations of map points (at least theta)
 	
@@ -53,6 +58,7 @@ global Params;
 Params.theta = 15; % Number of shared observations a keyframe must have to be considered the same map points
 Params.theta_min = 100; % Defines high covisability for spanning tree
 Params.keyFramePercentOfBestScoreThreshold = 75; % bag of words returns keyframes that are more than this percentage of the best match
+Params.cameraParams = load_camera_params(calibFile, cameraID);
 % ADD number of features to say we didn't lose localization
 % ADD angle threshold between v and n
 % ADD scale invariance region - perhaps set from data set
@@ -64,14 +70,16 @@ Debug.displayFeaturesOnImages = false;
 
 %% Run ORB-SLAM
 
-
 imagesFiles = dir([imageDir, filesep, '*', imageExt]);
-frames = cell([1 length(imagesFiles)]);
-for i = 1:3
-	frames{i} = imread([imagesFiles(i).folder, filesep, imagesFiles(i).name]);
+framesToConsider = 1:5:length(imagesFiles);
+% framesToConsider = 1:3;
+frames = cell([1 length(framesToConsider)]);
+for i = 1:length(framesToConsider)
+	frameIdx = framesToConsider(i);
+	frames{i} = imread([imagesFiles(frameIdx).folder, filesep, imagesFiles(i).name]);
 end
 
-for i = 1:length(frames)
+for i = 1:length(framesToConsider)
 	
 	if iscell(frames)
 		frame = frames{i};
@@ -81,3 +89,22 @@ for i = 1:length(frames)
 	
 	orb_slam(frame);
 end
+
+% full BA + Display
+tracks = findTracks(Map.covisibilityGraph);
+camPoses = poses(Map.covisibilityGraph);
+xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
+[xyzPoints, camPoses, reprojectionErrors] = bundleAdjustment(xyzPoints, ...
+        tracks, camPoses, Params.cameraParams, 'FixedViewId', 1, ...
+        'PointsUndistorted', true);
+figure
+hold on
+plotCamera(camPoses, 'Size', 0.2);
+grid on
+
+validIdx = sqrt(xyzPoints(:, 1).^2 + xyzPoints(:, 2).^2 + xyzPoints(:, 3).^2) < 100;
+validIdx = validIdx & (xyzPoints(:, 3) > 0);
+
+pcshow(xyzPoints(validIdx, :), 'VerticalAxis', 'y', 'VerticalAxisDir', 'down', ...
+    'MarkerSize', 45);
+hold off;
