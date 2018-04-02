@@ -8,7 +8,8 @@ global Debug
 [features_prev, validPoints_prev] = extract_features(frame_prev);
 [features_curr, validPoints_curr] = extract_features(frame_curr);
 
-matchedIdx = matchFeatures(features_prev, features_curr);
+matchedIdx = matchFeatures(features_prev, features_curr, 'Unique', true, ...
+	'Method', 'Approximate', 'MatchThreshold', .8);
     
 matchedPoints1 = validPoints_prev(matchedIdx(:, 1));
 matchedPoints2 = validPoints_curr(matchedIdx(:, 2));
@@ -18,7 +19,7 @@ matchedPoints2 = validPoints_curr(matchedIdx(:, 2));
 	matchedPoints1, matchedPoints2, Params.cameraParams);
 
 k = Map.covisibilityGraph.NumViews + 1;
-Map.covisibilityGraph = addView(Map.covisibilityGraph, k, 'Points', validPoints_curr);
+Map.covisibilityGraph = addView(Map.covisibilityGraph, k, features_curr, 'Points', validPoints_curr);
 Map.covisibilityGraph = addConnection(Map.covisibilityGraph, k - 1, k, 'Matches', matchedIdx(inlierIdx,:));
 
 prevPose = poses(Map.covisibilityGraph, k - 1);

@@ -44,7 +44,7 @@ Map.keyFrames = [];
 	%
 	% Make a function to create new keyFrames
 
-Map.covisibilityGraph = viewSet();
+Map.covisibilityGraph = ourViewSet();
 	% An undirected graph where nodes are keyframes and edges are shared
 	% observations of map points (at least theta)
 	
@@ -71,8 +71,8 @@ Debug.displayFeaturesOnImages = false;
 %% Run ORB-SLAM
 
 imagesFiles = dir([imageDir, filesep, '*', imageExt]);
-framesToConsider = 1:5:length(imagesFiles);
-% framesToConsider = 1:3;
+% framesToConsider = 1:5:length(imagesFiles);
+framesToConsider = 1:5:100;
 frames = cell([1 length(framesToConsider)]);
 for i = 1:length(framesToConsider)
 	frameIdx = framesToConsider(i);
