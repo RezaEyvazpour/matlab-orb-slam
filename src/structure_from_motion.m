@@ -19,7 +19,7 @@ matchedPoints2 = validPoints_curr(matchedIdx(:, 2));
 	matchedPoints1, matchedPoints2, Params.cameraParams);
 
 k = Map.covisibilityGraph.NumViews + 1;
-Map.covisibilityGraph = addView(Map.covisibilityGraph, k, features_curr, 'Points', validPoints_curr);
+Map.covisibilityGraph = addView(Map.covisibilityGraph, k, features_curr, validPoints_curr, 'Points', validPoints_curr);
 Map.covisibilityGraph = addConnection(Map.covisibilityGraph, k - 1, k, 'Matches', matchedIdx(inlierIdx,:));
 
 prevPose = poses(Map.covisibilityGraph, k - 1);
@@ -30,6 +30,13 @@ orientation = relativeOrient * prevOrientation;
 location = prevLocation + relativeLoc * prevOrientation;
 Map.covisibilityGraph = updateView(Map.covisibilityGraph, k, ...
 	'Orientation', orientation, 'Location', location);
+
+% Connect every past view to the current view
+for i = 1:k-2
+	connect_views(i,k)
+end
+
+
 
 % local BA
 viewIds = max(k - 10, 1):k;
@@ -45,6 +52,31 @@ xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
 
 Map.covisibilityGraph = updateView(Map.covisibilityGraph, camPoses);
 
+end
+
+function connect_views(viewIdx1, viewIdx2)
+
+	global Map
+	global State
+	global Params
+	global Debug
+
+	features1 = Map.covisibilityGraph.Descriptors{viewIdx1};
+	points1 = Map.covisibilityGraph.Points{viewIdx1};
+	features2 = Map.covisibilityGraph.Descriptors{viewIdx2};
+	points2 = Map.covisibilityGraph.Points{viewIdx2};
+
+	matchedIdx = matchFeatures(features1, features2, 'Unique', true, ...
+		'Method', 'Approximate', 'MatchThreshold', .8);
+
+	matchedPoints1 = points1(matchedIdx(:, 1));
+	matchedPoints2 = points2(matchedIdx(:, 2));
+
+
+	[~, ~, inlierIdx] = estimate_relative_motion(...
+		matchedPoints1, matchedPoints2, Params.cameraParams);
+
+	Map.covisibilityGraph = addConnection(Map.covisibilityGraph, viewIdx1, viewIdx2, 'Matches', matchedIdx(inlierIdx,:));
 end
 
 

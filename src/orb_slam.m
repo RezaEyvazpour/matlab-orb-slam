@@ -16,8 +16,10 @@ if ~isempty(frame_prev)
 else
 	% Initialize
 	[descriptors, points] = extract_features(frame_curr);
-	Map.covisibilityGraph = addView(Map.covisibilityGraph, 1, descriptors, 'Points', points, ...
-    'Orientation', eye(3), 'Location', zeros(1, 3));
+	Map.covisibilityGraph = addView(Map.covisibilityGraph, 1, descriptors, points, 'Points', points, ...
+		'Orientation', eye(3), 'Location', zeros(1, 3));
+% 	Map.covisibilityGraph = addView(Map.covisibilityGraph, 1, 'Points', points, ...
+% 		'Orientation', eye(3), 'Location', zeros(1, 3));
 end
 
 	frame_prev = frame_curr;

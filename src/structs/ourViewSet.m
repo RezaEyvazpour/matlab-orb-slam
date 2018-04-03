@@ -86,7 +86,11 @@ classdef ourViewSet
         %   'Matches', 'RelativeOrientation', and 'RelativeLocation'.
         Connections = table();
 		
+		% ADDITION
+		Points = {};     % Added because Matlab typecasts view.points
 		Descriptors = {};
+% 		MapPoints = containers.Map();
+% 		KeyFrames = containers.Map();
     end
     
     properties(SetAccess=private, Dependent)
@@ -106,7 +110,7 @@ classdef ourViewSet
         end
                 
         %------------------------------------------------------------------
-        function this = addView(this, view, descriptor, varargin)
+        function this = addView(this, view, descriptors, points_, varargin)
             % addView Add a new view to a viewSet object
             %   vSet = addView(vSet, viewId, Name, Value, ...) adds a new view
             %   denoted by viewId, an integer, to a viewSet object.
@@ -145,7 +149,7 @@ classdef ourViewSet
             %     detectFASTFeatures, detectBRISKFeatures, detectMSERFeatures, table
             if istable(view)
                 view = checkViewTable(view);
-            else
+			else
                 [ViewId, Points, Orientation, Location] = ...
                     parseViewInputs(view, varargin{:});
                 view = table(ViewId, Points, Orientation, Location);
@@ -185,7 +189,10 @@ classdef ourViewSet
                 end
 			end
 			
-			this.Descriptors{end+1} = descriptor;
+			% ADDITION
+			% Update descriptors, keyframes and mappoints
+			this.Descriptors{end+1} = descriptors;
+			this.Points{end+1} = points_;
         end
         
         %------------------------------------------------------------------
@@ -313,7 +320,27 @@ classdef ourViewSet
                     this.ShouldRecreateGraph = true;
                 end
                 this.Views(viewIdx, :) = [];
+				
+				% ADDITION
 				this.Descriptors(viewIdx) = [];
+				this.Points(viewIdx) = [];
+				% Update map points by removing the index of the keyframe
+				% being removed
+				% If the mappoint no longer has the index of any keyframes,
+				% remove the mappoint
+% 				strView = num2str(viewId);
+% 				mapPoints = this.KeyFrames(strView);
+% 				for i = 1:length(mapPoints)
+% 					mpKey = num2str(mapPoints(i));
+% 					frameArray = this.MapPoints(mpKey);
+% 					frameArray(frameArray == viewId) = [];
+% 					this.MapPoints(mpKey) = frameArray;
+% 					if isempty(this.MapPoints(mpKey))
+% 						this.MapPoints.remove(mpKey)
+% 					end
+% 				end
+% 				% Remove the keyframe
+% 				this.KeyFrames.remove(strView);
                 
                 if ~isempty(this.Connections)
                     connIdx = getConnectionIndexToAndFrom(this, viewId);
@@ -714,7 +741,47 @@ classdef ourViewSet
             
             tracks = createTracks(this);
         end
-    end
+	end
+	
+	methods % ADDITION OUR METHODS
+		
+		function n = getNForAllFeatures(this, viewIdx)
+			matches = this.getViewsThatHaveMatchingFeatures(viewIdx);
+			n = cell([1 length(matches)]);
+			n_sum = cell([1 length(matches)]);
+			n_sum(1,:) = {-this.Views.Orientation{viewIdx}(3,:)};
+			for i = 1:length(matches)
+				match = matches{i};
+				for j = 1:length(match)
+					n_sum{i} = n_sum{i} - this.Views.Orientation{j}(3,:);
+				end
+				n{i} = n_sum{i}./norm(n_sum{i}); % +1 accounts for viewIdx frame
+			end
+		end
+		
+		function matches = getViewsThatHaveMatchingFeatures(this, viewIdx)
+			matches = cell([1 length(this.Points{viewIdx})]);
+			otherViewIdxs = unique(this.Connections.ViewId1);
+			otherViewIdxs(viewIdx) = [];
+			for i = 1:length(otherViewIdxs)
+				otherViewIdx = otherViewIdxs(i);
+				if this.hasConnection(viewIdx, otherViewIdx)
+					connectionIdx = getConnectionIndex(this, viewIdx, otherViewIdx);
+					matchList = this.Connections.Matches{connectionIdx}(:,1);
+				elseif this.hasConnection(otherViewIdx, viewIdx)
+					connectionIdx = getConnectionIndex(this, otherViewIdx, viewIdx);
+					matchList = this.Connections.Matches{connectionIdx}(:,2);
+				else
+					continue
+				end
+				
+				for j = 1:length(matchList)
+					match = matchList(j);
+					matches{match} = [matches{match} otherViewIdx];
+				end
+			end
+		end
+	end
                 
     methods(Access=private)
         %------------------------------------------------------------------
