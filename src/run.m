@@ -4,7 +4,9 @@ clc;
 
 %% User setup
 
-sequence = 0;
+isPlot = false;
+
+sequence = 4;
 
 imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
 imageExt = '.png';
@@ -78,7 +80,6 @@ Debug.displayFeaturesOnImages = false;
 %% Run ORB-SLAM
 
 imagesFiles = dir([imageDir, filesep, '*', imageExt]);
-% framesToConsider = 1:5:length(imagesFiles);
 framesToConsider = 1:5:min(1000, length(imagesFiles));
 frames = cell([1 length(framesToConsider)]);
 for i = 1:length(framesToConsider)
@@ -106,14 +107,17 @@ xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
 [xyzPoints, camPoses, reprojectionErrors] = bundleAdjustment(xyzPoints, ...
         tracks, camPoses, Params.cameraParams, 'FixedViewId', 1, ...
         'PointsUndistorted', true);
-figure
-hold on
-plotCamera(camPoses, 'Size', 0.2);
-grid on
 
-validIdx = sqrt(xyzPoints(:, 1).^2 + xyzPoints(:, 2).^2 + xyzPoints(:, 3).^2) < 100;
-validIdx = validIdx & (xyzPoints(:, 3) > 0);
+if isPlot
+	figure
+	hold on
+	plotCamera(camPoses, 'Size', 0.2);
+	grid on
 
-pcshow(xyzPoints(validIdx, :), 'VerticalAxis', 'y', 'VerticalAxisDir', 'down', ...
-    'MarkerSize', 45);
-hold off;
+	validIdx = sqrt(xyzPoints(:, 1).^2 + xyzPoints(:, 2).^2 + xyzPoints(:, 3).^2) < 100;
+	validIdx = validIdx & (xyzPoints(:, 3) > 0);
+
+	pcshow(xyzPoints(validIdx, :), 'VerticalAxis', 'y', 'VerticalAxisDir', 'down', ...
+		'MarkerSize', 45);
+	hold off;
+end
