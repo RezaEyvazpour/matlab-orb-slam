@@ -1,4 +1,4 @@
-function structure_from_motion(frame_prev, frame_curr)
+function features_curr = structure_from_motion(frame_prev, frame_curr)
 
 global Map
 global State
@@ -13,7 +13,6 @@ matchedIdx = matchFeatures(features_prev, features_curr, 'Unique', true, ...
     
 matchedPoints1 = validPoints_prev(matchedIdx(:, 1));
 matchedPoints2 = validPoints_curr(matchedIdx(:, 2));
-
 
 [relativeOrient, relativeLoc, inlierIdx] = estimate_relative_motion(...
 	matchedPoints1, matchedPoints2, Params.cameraParams);
@@ -31,7 +30,10 @@ location = prevLocation + relativeLoc * prevOrientation;
 Map.covisibilityGraph = updateView(Map.covisibilityGraph, k, ...
 	'Orientation', orientation, 'Location', location);
 
+Map.bow(k, :) = calc_bow_repr(features_curr, Params.kdtree, Params.numCodewords);
+
 % local BA
+%{
 viewIds = max(k - 10, 1):k;
 tracks = findTracks(Map.covisibilityGraph, viewIds);
 
@@ -44,10 +46,10 @@ xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
 	'PointsUndistorted', true);
 
 Map.covisibilityGraph = updateView(Map.covisibilityGraph, camPoses);
-
+%}
 end
 
-
+%%
 function [orient, loc, inlierIdx] = estimate_relative_motion(matchedPoints1, matchedPoints2, cameraParams)
 [F, inlierIdx] = estimateFundamentalMatrix(matchedPoints1, matchedPoints2, 'Method', 'RANSAC');
 

@@ -8,27 +8,28 @@ data = load('dataset/codewords.mat');
 
 kdtree_mdl = KDTreeSearcher(data.codewords);
 
-num_codewords = size(data.codewords, 1);
+numCodewords = size(data.codewords, 1);
 
 %%
-
+skip = 5;
 if exist(num2str(seq, 'dataset/sequences/%02d/image_0.mat'), 'file')
+    disp('Using precalculated SURF features ...')
     data = load(num2str(seq, 'dataset/sequences/%02d/image_0.mat'));
-    features = data.features;
-    points = data.validPoints;
+    features = data.features(1:skip:end);
+    points = data.validPoints(1:skip:end);
     
-    numImages = length(points);
+    numImages = length(features);
     
-    bow = zeros(numImages, num_codewords);
+    bow = zeros(numImages, numCodewords);
     parfor k = 1:numImages       
-        bow(k, :) = calc_bow_repr(features{k}, kdtree_mdl, num_codewords);
+        bow(k, :) = calc_bow_repr(features{k}, kdtree_mdl, numCodewords);
     end
 else
     imageFiles = dir(num2str(seq, 'dataset/sequences/%02d/image_0/*.png'));
+    imageFiles = imageFiles(1:skip:end);
+    numImages = length(imageFiles);
     
-    numImages = min(1000, length(imageFiles));
-    
-    bow = zeros(numImages, num_codewords);
+    bow = zeros(numImages, numCodewords);
     features = cell(numImages, 1);
     points = cell(numImages, 1);
     parfor k = 1:numImages
@@ -37,7 +38,7 @@ else
         points{k} = detectSURFFeatures(frame);
         [features{k}, points{k}] = extractFeatures(frame, points{k});
         
-        bow(k, :) = calc_bow_repr(features{k}, kdtree_mdl, num_codewords);
+        bow(k, :) = calc_bow_repr(features{k}, kdtree_mdl, numCodewords);
     end
 end
 
@@ -50,7 +51,7 @@ for i = (num_frames_apart + 1):numImages
     
     [~, j] = min(d2);
     
-    matchedIdx = matchFeatures(features{i},features{j}, 'unique', true);
+    matchedIdx = matchFeatures(features{i}, features{j}, 'unique', true);
     
     ni = length(features{i});
     nj = length(features{j});
@@ -62,13 +63,36 @@ for i = (num_frames_apart + 1):numImages
 end
 
 %%
-poses = load_gt_poses(seq);
-x = poses(1:numImages, 1, 4);
-z = poses(1:numImages, 3, 4);
+poses_gt = load_gt_poses(seq);
+poses_gt = poses_gt(1:skip:end, :, :);
 
+x_gt = poses_gt(1:numImages, 1, 4);
+z_gt = poses_gt(1:numImages, 3, 4);
+
+%%
+vs = viewSet();
+
+for i = 1:numImages
+    vs = addView(vs, i, 'Points', points{i}, ...
+        'Orientation', squeeze(poses_gt(i, :, 1:3))', ...
+        'Location', reshape(poses_gt(i, :, 4), [1, 3]));
+    
+    if i > 1
+        vs = addConnection(vs, i, i - 1);
+    end
+    
+    j = loop_closure_proposal(i);
+    if j > 0
+        vs = addConnection(vs, i, j);
+    end
+end
+
+tracks = findTracks(vs);
+
+%%
 figure(1)
 clf()
-plot(x, z, 'k.-')
+plot(x_gt, z_gt, 'k')
 hold on
 axis equal
 axis(axis() + [-10, 10, -10, 10])
@@ -76,7 +100,7 @@ axis(axis() + [-10, 10, -10, 10])
 for i = 1:numImages
     j = loop_closure_proposal(i);
     if j > 0
-        plot([x(i), x(j)], [z(i), z(j)], 'r')
+        plot([x_gt(i), x_gt(j)], [z_gt(i), z_gt(j)], 'r')
     end
 end
 end

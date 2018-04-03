@@ -4,13 +4,16 @@ clc;
 
 %% User setup
 
-sequence = 4;
+sequence = 0;
 
 imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
 imageExt = '.png';
 
 calibFile = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'calib.txt'];
 cameraID = 0;
+
+codewords = load(['dataset' filesep 'codewords.mat']);
+codewords = codewords.codewords;
 
 %% Get feature vocabulary
 
@@ -63,6 +66,10 @@ Params.cameraParams = load_camera_params(calibFile, cameraID);
 % ADD angle threshold between v and n
 % ADD scale invariance region - perhaps set from data set
 
+Params.kdtree = KDTreeSearcher(codewords);
+Params.numCodewords = size(codewords, 1);
+Params.numFramesApart = 100;
+
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
 Debug.displayFeaturesOnImages = false;
@@ -72,12 +79,14 @@ Debug.displayFeaturesOnImages = false;
 
 imagesFiles = dir([imageDir, filesep, '*', imageExt]);
 % framesToConsider = 1:5:length(imagesFiles);
-framesToConsider = 1:5:100;
+framesToConsider = 1:5:min(1000, length(imagesFiles));
 frames = cell([1 length(framesToConsider)]);
 for i = 1:length(framesToConsider)
 	frameIdx = framesToConsider(i);
 	frames{i} = imread([imagesFiles(frameIdx).folder, filesep, imagesFiles(i).name]);
 end
+
+Map.bow = zeros(length(framesToConsider), 64);
 
 for i = 1:length(framesToConsider)
 	
