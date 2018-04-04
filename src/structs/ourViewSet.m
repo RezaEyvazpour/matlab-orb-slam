@@ -745,7 +745,104 @@ classdef ourViewSet
 	
 	methods % ADDITION OUR METHODS
 		
-		function n = getNForAllFeatures(this, viewIdx)
+		% An alias for deleteView
+		function this = deleteKeyFrame(this, idx)
+			this = this.deleteView(idx);
+		end
+		
+		function connections = getConnectionsWithGreaterThanOrEqualToNMatches(this, N)
+			connections = getAllConnections(this);
+			for i = size(connections,1):-1:1
+				idx1 = connections(i,1);
+				idx2 = connections(i,2);
+				connectionIdx = this.getConnectionIndex(idx1, idx2);
+				if ~(size(this.Connections.Matches{connectionIdx},1) >= N)
+					connections(i,:) = [];
+				end
+			end
+		end
+		
+		function connections = getConnectionsWithLessThanNMatches(this, N)
+			connections = getAllConnections(this);
+			for i = size(connections,1):-1:1
+				idx1 = connections(i,1);
+				idx2 = connections(i,2);
+				connectionIdx = this.getConnectionIndex(idx1, idx2);
+				if ~(size(this.Connections.Matches{connectionIdx},1) < N)
+					connections(i,:) = [];
+				end
+			end
+		end
+		
+		% Not sure if spanning tree is in the right form
+		function [spanningTree, connections, views] = getSpanningTree(this)
+			views = this.Views.ViewId;
+			connections = zeros(length(views)-1, 2);
+			for i = 1:length(views)-1
+				connections(i,1) = views(i);
+				connections(i,2) = views(i+1);
+			end
+			spanningTree = zeros(length(connections));
+			for i = 1:length(connections)
+				idx1 = connections(i,1);
+				idx2 = connections(i,2);
+				spanningTree(idx1, idx2) = 1;
+			end
+		end
+		
+		function matches = getMatches(this, viewIdx1, viewIdx2)
+			connectionIdx = this.getConnectionIndex(viewIdx1, viewIdx2);
+			matches = this.Connections.Matches{connectionIdx};
+		end
+		
+		function connections = getAllConnections(this)
+			connections = nchoosek(this.Views.ViewId, 2);
+			for i = size(connections,1):-1:1
+				idx1 = connections(i,1);
+				idx2 = connections(i,2);
+				% If no connection exists delete from potential connections
+				if ~this.hasConnection(idx1, idx2)
+					connections(i,:) = [];
+				end
+			end
+		end
+		
+		function [descriptors, points] = getAllMapPoints(this, viewIdx)
+			descriptors = this.Descriptors{viewIdx};
+			points = this.Points{viewIdx};
+		end
+		
+		function [descriptors, points, idx] = getMapPointsWithMatches(this, viewIdx, numMatches, comparrison)
+			if nargin < 4
+				comparrison = @ge;
+			end
+			if nargin < 3
+				numMatches = 1;
+			end
+			
+			featuresWithMatches = getViewsThatHaveMatchingFeatures(this, viewIdx);
+			checkLength = @(v) comparrison(length(v), numMatches);
+			
+			satisfyCheckLength = cellfun(checkLength, featuresWithMatches);
+			[descriptors_all, points_all] = getAllMapPoints(this, viewIdx);
+			descriptors = descriptors_all(satisfyCheckLength,:);
+			points = points_all(satisfyCheckLength);
+			idx = find(satisfyCheckLength);
+		end
+		
+		function [descriptors, points, idx] = getMapPointsWithGreaterThanOrEqualToNMatches(this, viewIdx, N)
+			[descriptors, points, idx] = getMapPointsWithMatches(this, viewIdx, N, @gt);
+		end
+		
+		function [descriptors, points, idx] = getMapPointsWithExactlyNMatches(this, viewIdx, N)
+			[descriptors, points, idx] = getMapPointsWithMatches(this, viewIdx, N, @eq);
+		end
+		
+		function [descriptors, points, idx] = getMapPointsWithNoMatches(this, viewIdx)
+			[descriptors, points, idx] = getMapPointsWithMatches(this, viewIdx, 0, @eq);
+		end
+		
+		function n = getNForAllFeaturesInKeyFrame(this, viewIdx)
 			matches = this.getViewsThatHaveMatchingFeatures(viewIdx);
 			n = cell([1 length(matches)]);
 			n_sum = cell([1 length(matches)]);
@@ -761,7 +858,7 @@ classdef ourViewSet
 		
 		function matches = getViewsThatHaveMatchingFeatures(this, viewIdx)
 			matches = cell([1 length(this.Points{viewIdx})]);
-			otherViewIdxs = unique(this.Connections.ViewId1);
+			otherViewIdxs = unique([this.Connections.ViewId1; this.Connections.ViewId2]);
 			otherViewIdxs(viewIdx) = [];
 			for i = 1:length(otherViewIdxs)
 				otherViewIdx = otherViewIdxs(i);
@@ -1001,26 +1098,26 @@ classdef ourViewSet
         end
     end
     
-    methods(Hidden)
-        %------------------------------------------------------------------
-        function that = saveobj(this)
-            that.Views = this.Views;
-            that.Connections = this.Connections;
-            that.FeatureGraph = this.FeatureGraph;
-            that.ShouldRecreateGraph = this.ShouldRecreateGraph;
-        end
-    end
-    
-    methods(Static, Hidden)
-        %------------------------------------------------------------------
-        function this = loadobj(that)
-            this = viewSet;
-            this.Views = that.Views;
-            this.Connections = that.Connections;
-            this.FeatureGraph = that.FeatureGraph;
-            this.ShouldRecreateGraph = that.ShouldRecreateGraph;
-        end
-    end
+%     methods(Hidden)
+%         %------------------------------------------------------------------
+%         function that = saveobj(this)
+%             that.Views = this.Views;
+%             that.Connections = this.Connections;
+%             that.FeatureGraph = this.FeatureGraph;
+%             that.ShouldRecreateGraph = this.ShouldRecreateGraph;
+%         end
+%     end
+%     
+%     methods(Static, Hidden)
+%         %------------------------------------------------------------------
+%         function this = loadobj(that)
+%             this = viewSet;
+%             this.Views = that.Views;
+%             this.Connections = that.Connections;
+%             this.FeatureGraph = that.FeatureGraph;
+%             this.ShouldRecreateGraph = that.ShouldRecreateGraph;
+%         end
+%     end
 end
 
 %--------------------------------------------------------------------------

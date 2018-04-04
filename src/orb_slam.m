@@ -12,7 +12,7 @@ if ~isempty(frame_prev)
 	
 	keyFrame = tracking(frame_prev, frame_curr);
 	local_mapping(keyFrame);
-	loop_closing(keyFrame);
+	loop_closing();
 else
 	% Initialize
 	[descriptors, points] = extract_features(frame_curr);

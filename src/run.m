@@ -64,6 +64,7 @@ Params.theta = 15; % Number of shared observations a keyframe must have to be co
 Params.theta_min = 100; % Defines high covisability for spanning tree
 Params.keyFramePercentOfBestScoreThreshold = 75; % bag of words returns keyframes that are more than this percentage of the best match
 Params.cameraParams = load_camera_params(calibFile, cameraID);
+Params.minMatchesForConnection = 50;
 % ADD number of features to say we didn't lose localization
 % ADD angle threshold between v and n
 % ADD scale invariance region - perhaps set from data set

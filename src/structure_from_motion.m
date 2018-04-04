@@ -34,7 +34,7 @@ Map.bow(k, :) = calc_bow_repr(features_curr, Params.kdtree, Params.numCodewords)
 
 % Connect every past view to the current view
 for i = 1:k-2
-	connect_views(i,k)
+	connect_views(i,k, Params.minMatchesForConnection)
 end
 
 % local BA
@@ -54,12 +54,16 @@ Map.covisibilityGraph = updateView(Map.covisibilityGraph, camPoses);
 %}
 end
 
-function connect_views(viewIdx1, viewIdx2)
+function connect_views(viewIdx1, viewIdx2, minNumMatches)
 
 	global Map
 	global State
 	global Params
 	global Debug
+	
+	if nargin < 3
+		minNumMatches = 0;
+	end
 
 	features1 = Map.covisibilityGraph.Descriptors{viewIdx1};
 	points1 = Map.covisibilityGraph.Points{viewIdx1};
@@ -76,7 +80,9 @@ function connect_views(viewIdx1, viewIdx2)
 	[~, ~, inlierIdx] = estimate_relative_motion(...
 		matchedPoints1, matchedPoints2, Params.cameraParams);
 
-	Map.covisibilityGraph = addConnection(Map.covisibilityGraph, viewIdx1, viewIdx2, 'Matches', matchedIdx(inlierIdx,:));
+	if size(matchedIdx,1) >= minNumMatches
+		Map.covisibilityGraph = addConnection(Map.covisibilityGraph, viewIdx1, viewIdx2, 'Matches', matchedIdx(inlierIdx,:));
+	end
 end
 
 
