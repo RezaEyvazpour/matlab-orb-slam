@@ -33,13 +33,15 @@ Map.covisibilityGraph = updateView(Map.covisibilityGraph, k, ...
 Map.bow(k, :) = calc_bow_repr(features_curr, Params.kdtree, Params.numCodewords);
 
 % Connect every past view to the current view
+%{
 for i = max(k - Params.numViewsToLookBack, 1):k-2
     try
         connect_views(i,k, Params.minMatchesForConnection)
     catch
-        warning('Could not find enough inliers between view %d and %d.', i, k)
+        % warning('Could not find enough inliers between view %d and %d.', i, k)
     end
 end
+%}
 
 % local BA
 %{

@@ -71,10 +71,12 @@ Params.minMatchesForConnection = 50;
 
 Params.kdtree = KDTreeSearcher(codewords);
 Params.numCodewords = size(codewords, 1);
-Params.numFramesApart = 100;
+Params.numFramesApart = 20;
 
 Params.numViewsToLookBack = 10;
-Params.minMatchRatioRatio = 0.2;
+Params.minMatchRatioRatio = 0.4;
+
+Params.numSkip = 4;
 
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
@@ -84,7 +86,7 @@ Debug.displayFeaturesOnImages = false;
 %% Run ORB-SLAM
 
 imagesFiles = dir([imageDir, filesep, '*', imageExt]);
-framesToConsider = 1:3:length(imagesFiles);
+framesToConsider = 1:Params.numSkip:length(imagesFiles);
 frames = cell([1 length(framesToConsider)]);
 for i = 1:length(framesToConsider)
 	frameIdx = framesToConsider(i);
@@ -103,11 +105,11 @@ for i = 1:length(framesToConsider)
 	
 	orb_slam(frame);
     
-    fprintf('Sequence %02d [%4d/%4d]\r', ...
+    fprintf('Sequence %02d [%4d/%4d]\n', ...
         sequence, i, length(framesToConsider))
 end
 
-% full BA + Display
+%% full BA
 tracks = findTracks(Map.covisibilityGraph);
 camPoses = poses(Map.covisibilityGraph);
 xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
@@ -115,10 +117,15 @@ xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
         tracks, camPoses, Params.cameraParams, 'FixedViewId', 1, ...
         'PointsUndistorted', true);
 
+%% Display
 if isPlot
 	figure
 	hold on
-	plotCamera(camPoses, 'Size', 0.2);
+	traj = cell2mat(camPoses.Location);
+    x = traj(:, 1);
+    z = traj(:, 3);
+    plot(x, z)
+    axis equal
 	grid on
     
     %{
@@ -128,5 +135,8 @@ if isPlot
 	pcshow(xyzPoints(validIdx, :), 'VerticalAxis', 'y', 'VerticalAxisDir', 'down', ...
 		'MarkerSize', 45);
     %}
+    
+    %validIdx = sqrt(xyzPoints(:, 1).^2 + xyzPoints(:, 2).^2 + xyzPoints(:, 3).^2) < 500;
+    %scatter(xyzPoints(validIdx, 1), xyzPoints(validIdx, 3), '.')
 	hold off;
 end
