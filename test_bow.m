@@ -11,7 +11,7 @@ kdtree_mdl = KDTreeSearcher(data.codewords);
 numCodewords = size(data.codewords, 1);
 
 %%
-skip = 5;
+skip = 3;
 if exist(num2str(seq, 'dataset/sequences/%02d/image_0.mat'), 'file')
     disp('Using precalculated SURF features ...')
     data = load(num2str(seq, 'dataset/sequences/%02d/image_0.mat'));
@@ -45,7 +45,7 @@ end
 %%
 loop_closure_proposal = zeros(numImages, 1);
 num_frames_apart = 50;
-
+matchRatio = zeros(numImages, 1);
 for i = (num_frames_apart + 1):numImages
     d2 = hist_diff(bow(1:(i - num_frames_apart), :), bow(i, :));
     
@@ -55,9 +55,9 @@ for i = (num_frames_apart + 1):numImages
     
     ni = length(features{i});
     nj = length(features{j});
-    matchRatio = 2 * numel(matchedIdx) / (ni + nj);
+    matchRatio(i) = numel(matchedIdx) / (ni + nj);
     
-    if matchRatio > 0.5
+    if matchRatio(i) > 0.2
         loop_closure_proposal(i) = j;
     end
 end
@@ -70,6 +70,7 @@ x_gt = poses_gt(1:numImages, 1, 4);
 z_gt = poses_gt(1:numImages, 3, 4);
 
 %%
+%{
 vs = viewSet();
 
 for i = 1:numImages
@@ -88,7 +89,7 @@ for i = 1:numImages
 end
 
 tracks = findTracks(vs);
-
+%}
 %%
 figure(1)
 clf()

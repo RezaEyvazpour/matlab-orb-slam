@@ -21,16 +21,23 @@ if i > Params.numFramesApart
     matchedPoints1 = points1(matchedIdx(:, 1), :);
     matchedPoints2 = points2(matchedIdx(:, 2), :);
     
-    [~, inlierIdx] = estimateFundamentalMatrix(matchedPoints1, matchedPoints2, 'Method', 'RANSAC');
-    
-    ni = length(features1);
-    nj = length(features2);
-    matchRatio = numel(matchedIdx(inlierIdx, :)) / (ni + nj);
-    
-    if matchRatio > 0.5
-        Map.covisibilityGraph = addConnection(Map.covisibilityGraph, ...
-            i, j, 'Matches', matchedIdx(inlierIdx,:));
+    try
+        [~, inlierIdx] = estimateFundamentalMatrix(...
+            matchedPoints1, matchedPoints2, 'Method', 'RANSAC');
+        
+        ni = length(features1);
+        nj = length(features2);
+        matchRatio = numel(matchedIdx(inlierIdx, :)) / (ni + nj);
+
+        if matchRatio > Params.minMatchRatioRatio
+            Map.covisibilityGraph = addConnection(Map.covisibilityGraph, ...
+                i, j, 'Matches', matchedIdx(inlierIdx,:));
+            fprintf('[!] Found a loop closure between %d and %d\n', i, j);
+        end
+    catch
+        
     end
+    
 end
 
 % Compute Sim3

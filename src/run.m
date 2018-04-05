@@ -4,9 +4,9 @@ clc;
 
 %% User setup
 
-isPlot = false;
+isPlot = true;
 
-sequence = 4;
+sequence = 0;
 
 imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
 imageExt = '.png';
@@ -73,6 +73,9 @@ Params.kdtree = KDTreeSearcher(codewords);
 Params.numCodewords = size(codewords, 1);
 Params.numFramesApart = 100;
 
+Params.numViewsToLookBack = 10;
+Params.minMatchRatioRatio = 0.2;
+
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
 Debug.displayFeaturesOnImages = false;
@@ -81,11 +84,11 @@ Debug.displayFeaturesOnImages = false;
 %% Run ORB-SLAM
 
 imagesFiles = dir([imageDir, filesep, '*', imageExt]);
-framesToConsider = 1:5:min(1000, length(imagesFiles));
+framesToConsider = 1:3:length(imagesFiles);
 frames = cell([1 length(framesToConsider)]);
 for i = 1:length(framesToConsider)
 	frameIdx = framesToConsider(i);
-	frames{i} = imread([imagesFiles(frameIdx).folder, filesep, imagesFiles(i).name]);
+	frames{i} = imread([imagesFiles(frameIdx).folder, filesep, imagesFiles(frameIdx).name]);
 end
 
 Map.bow = zeros(length(framesToConsider), 64);
@@ -99,6 +102,9 @@ for i = 1:length(framesToConsider)
 	end
 	
 	orb_slam(frame);
+    
+    fprintf('Sequence %02d [%4d/%4d]\r', ...
+        sequence, i, length(framesToConsider))
 end
 
 % full BA + Display
@@ -114,11 +120,13 @@ if isPlot
 	hold on
 	plotCamera(camPoses, 'Size', 0.2);
 	grid on
-
+    
+    %{
 	validIdx = sqrt(xyzPoints(:, 1).^2 + xyzPoints(:, 2).^2 + xyzPoints(:, 3).^2) < 100;
 	validIdx = validIdx & (xyzPoints(:, 3) > 0);
 
 	pcshow(xyzPoints(validIdx, :), 'VerticalAxis', 'y', 'VerticalAxisDir', 'down', ...
 		'MarkerSize', 45);
+    %}
 	hold off;
 end
