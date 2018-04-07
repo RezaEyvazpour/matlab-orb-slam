@@ -73,10 +73,10 @@ Params.kdtree = KDTreeSearcher(codewords);
 Params.numCodewords = size(codewords, 1);
 Params.numFramesApart = 20;
 
-Params.numViewsToLookBack = 10;
+Params.numViewsToLookBack = 5;
 Params.minMatchRatioRatio = 0.4;
 
-Params.numSkip = 4;
+Params.numSkip = 3;
 
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
@@ -94,6 +94,8 @@ for i = 1:length(framesToConsider)
 end
 
 Map.bow = zeros(length(framesToConsider), 64);
+Map.vOdom.rot = {};
+Map.vOdom.trans = {};
 
 for i = 1:length(framesToConsider)
 	
@@ -109,6 +111,7 @@ for i = 1:length(framesToConsider)
         sequence, i, length(framesToConsider))
 end
 
+save(num2str(sequence, 'data/0406_seq%02d.mat'), 'Map')
 %% full BA
 tracks = findTracks(Map.covisibilityGraph);
 camPoses = poses(Map.covisibilityGraph);
@@ -124,7 +127,7 @@ if isPlot
 	traj = cell2mat(camPoses.Location);
     x = traj(:, 1);
     z = traj(:, 3);
-    plot(x, z)
+    plot(x, z, 'x-')
     axis equal
 	grid on
     
