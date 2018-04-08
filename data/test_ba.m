@@ -42,6 +42,45 @@ p0 = reshape(poses, [numel(poses), 1]);
 poses2 = lsqnonlin(f, p0, -inf, inf, options);
 %}
 %%
+A = sparse(7 * (numConnections + 1), 7 * numPoses);
+b = zeros(7 * (numConnections + 1), 1);
+for k = 1:numConnections
+    idx1 = vs.Connections.ViewId1(k);
+    idx2 = vs.Connections.ViewId2(k);
+    
+    if idx1 == 1
+        p1 = randn(7, 1) * 1e-8;
+    else
+        p1 = poses(idx1, :)';
+    end
+    p2 = poses(idx2, :)';
+    
+    J = calc_measurement_jacob(p1, p2);
+    if any(any(isnan(J)))
+        fprintf("%d, %d\n", idx1, idx2);
+    end
+    
+    A((7 * k - 6):(7 * k), (7 * idx1 - 6):(7 * idx1)) = ...
+        J(:, 1:7);
+    A((7 * k - 6):(7 * k), (7 * idx2 - 6):(7 * idx2)) = ...
+        J(:, 8:14);
+    
+    delta_p = calc_odom(p1, p2);
+    l = norm(delta_p(5:7));
+    odom(k, 5:7) = odom(k, 5:7) * l;
+    
+    b((7 * k - 6):(7 * k)) = odom(k, :)' - delta_p;
+
+end
+A((7 * numConnections + 1):end, 1:7) = eye(7);
+B = A' * A;
+
+p2 = A \ b;
+p2 = reshape(p2, [7, numPoses]);
+x2 = p2(5, :);
+z2 = p2(7, :);
+
+%%
 %poses2 = reshape(poses2, [numPoses, 7]);
 figure(10)
 clf()
@@ -53,6 +92,8 @@ hold on
 
 plot(poses(:, 5), poses(:, 7), 'k', 'linewidth', 2)
 axis equal
+
+plot(x2, z2, 'g')
 
 
 %plot(poses2(:, 5), poses2(:, 7))
