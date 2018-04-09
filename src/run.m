@@ -6,7 +6,7 @@ clc;
 
 isPlot = true;
 
-sequence = 0;
+sequence = 1;
 
 imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
 imageExt = '.png';
@@ -76,7 +76,7 @@ Params.numFramesApart = 20;
 Params.numViewsToLookBack = 5;
 Params.minMatchRatioRatio = 0.4;
 
-Params.numSkip = 3;
+Params.numSkip = 2;
 
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
@@ -111,14 +111,17 @@ for i = 1:length(framesToConsider)
         sequence, i, length(framesToConsider))
 end
 
-save(num2str(sequence, 'data/0406_seq%02d.mat'), 'Map')
+save([num2str(sequence, 'data/0409_seq%02d'), ...
+    num2str(Params.numSkip, '_skip%d.mat')], 'Map')
 %% full BA
-tracks = findTracks(Map.covisibilityGraph);
 camPoses = poses(Map.covisibilityGraph);
+%{
+tracks = findTracks(Map.covisibilityGraph);
 xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
 [xyzPoints, camPoses, reprojectionErrors] = bundleAdjustment(xyzPoints, ...
         tracks, camPoses, Params.cameraParams, 'FixedViewId', 1, ...
         'PointsUndistorted', true);
+%}
 
 %% Display
 if isPlot

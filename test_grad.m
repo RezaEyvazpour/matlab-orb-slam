@@ -25,20 +25,21 @@ R2 = simplify(R2);
 t2 = p2(5:7).';
 
 %% 7DOF odom
-s = simplify(s2 / s1);
+sigma = p2(1) - p1(1);%simplify(s2 / s1);
 R = simplify(R2 * R1.');
-t = simplify((t2 - t1) * R1.' / s1);
+t = (t2 - t1) * R1.' / s1;
+t = simplify(t);
 
 %% rotation vector
 u = [R(3, 2) - R(2, 3)
     R(1, 3) - R(3, 1)
     R(2, 1) - R(1, 2)];
 u = simplify(u);
-theta = asin(norm(u, 2) / 2);
+theta = acos((trace(R) - 1) / 2);
 theta = simplify(theta);
 u = simplify(u / norm(u, 2) * theta);
 
-p = [s; u; t.'];
+p = [sigma; u; t.'];
 J = jacobian(p, [p1; p2]);
 
 matlabFunction(p, 'Vars', {p1, p2}, 'File', 'calc_odom')

@@ -41,8 +41,8 @@ Map.vOdom.trans{ne} = relativeLoc;
 orientation = relativeOrient * orient_km1;
 location = loc_km1 + relativeLoc * orient_km1;
 
-[U, S, V] = svd(orientation);
-orientation = U * sign(S) * V';
+[U, ~, V] = svd(orientation);
+orientation = U * V';
 
 Map.covisibilityGraph = updateView(Map.covisibilityGraph, k, ...
     'Orientation', orientation, 'Location', location);
@@ -98,10 +98,11 @@ matchedPoints1 = points1(matchedIdx(:, 1));
 matchedPoints2 = points2(matchedIdx(:, 2));
 
 
-[relativeOrient, relativeLoc, inlierIdx, ~] = estimate_relative_motion(...
+[relativeOrient, relativeLoc, inlierIdx, status] = estimate_relative_motion(...
     matchedPoints1, matchedPoints2, Params.cameraParams);
 
-if size(matchedIdx,1) >= minNumMatches
+
+if size(matchedIdx,1) >= minNumMatches && status == 0
     Map.covisibilityGraph = addConnection(Map.covisibilityGraph, ...
         viewIdx1, viewIdx2, 'Matches', matchedIdx(inlierIdx,:));
     
