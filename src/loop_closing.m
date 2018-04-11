@@ -27,13 +27,19 @@ if i > Params.numFramesApart
             matchedPoints1 = points1(matchedIdx(:, 1));
             matchedPoints2 = points2(matchedIdx(:, 2));
             
-            [~, inlierIdx] = estimateFundamentalMatrix(...
-                matchedPoints1, matchedPoints2, 'Method', 'RANSAC');
-
-            Map.covisibilityGraph = addConnection(Map.covisibilityGraph, ...
-                i, j, 'Matches', matchedIdx(inlierIdx, :));
+            [orient, loc, inlierIdx, status] = estimate_relative_motion(...
+                matchedPoints1, matchedPoints2, Params.cameraParams);
             
-            fprintf('[!] Found a loop closure between %d and %d.\n', i, j);
+            if status == 0
+                Map.covisibilityGraph = addConnection(Map.covisibilityGraph, ...
+                    i, j, 'Matches', matchedIdx(inlierIdx, :));
+
+                ne = size(Map.covisibilityGraph.Connections, 1);
+                Map.vOdom.rot{ne} = orient;
+                Map.vOdom.trans{ne} = loc;
+
+                fprintf('[!] Found a loop closure between %d and %d.\n', i, j);
+            end
         catch
             fprintf('[!] Loop closure proposal (%d, %d) rejected.\n', i, j);
         end
