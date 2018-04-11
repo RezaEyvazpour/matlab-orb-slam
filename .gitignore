@@ -1,5 +1,4 @@
-# OSx autosave
-**/*.m~
-
-# Windows autosave
-**/*.asv
+*.m~
+*.asv
+*.png
+*.mat
