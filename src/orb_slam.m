@@ -11,7 +11,11 @@ if ~isempty(frame_prev)
     structure_from_motion(frame_prev, frame_curr);
 	
 	keyFrame = tracking(frame_prev, frame_curr);
-	local_mapping(keyFrame);
+    disp('Before keyframe culling')
+    disp(Map.covisibilityGraph.NumViews);
+	local_mapping();
+    disp('After keyframe culling')
+    disp(Map.covisibilityGraph.NumViews);
 	loop_closing();
 else
 	% Initialize
