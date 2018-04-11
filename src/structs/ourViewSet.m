@@ -89,6 +89,9 @@ classdef ourViewSet
 		% ADDITION
 		Points = {};     % Added because Matlab typecasts view.points
 		Descriptors = {};
+        Orientation = {};
+        Location = {};
+        bow = {};
 % 		MapPoints = containers.Map();
 % 		KeyFrames = containers.Map();
     end
@@ -110,7 +113,7 @@ classdef ourViewSet
         end
                 
         %------------------------------------------------------------------
-        function this = addView(this, view, descriptors, points_, varargin)
+        function this = addView(this, view, descriptors, points_, bow_, varargin)
             % addView Add a new view to a viewSet object
             %   vSet = addView(vSet, viewId, Name, Value, ...) adds a new view
             %   denoted by viewId, an integer, to a viewSet object.
@@ -193,6 +196,7 @@ classdef ourViewSet
 			% Update descriptors, keyframes and mappoints
 			this.Descriptors{end+1} = descriptors;
 			this.Points{end+1} = points_;
+            this.bow{end+1} = bow_;
         end
         
         %------------------------------------------------------------------
@@ -281,6 +285,7 @@ classdef ourViewSet
                 if ~ismember('Location', unsetColumns)
                     this.Views{idx, 'Location'} = Location;
                 end
+                
             end
         end
         

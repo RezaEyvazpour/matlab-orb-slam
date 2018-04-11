@@ -32,14 +32,14 @@ global Debug
 
 vs = Map.covisibilityGraph;
 i=1;
-check_map_point=[];
-check_match_map_point=[];
+%check_map_point=[];
+%check_match_map_point=[];
 while(1)
     keyframe1=vs.Views.ViewId(i);
-    num_key_frames=vs.NumViews
+    num_key_frames=vs.NumViews;
     [descriptors_all, points_all] = vs.getAllMapPoints(keyframe1);
     map_points_keyframe1=points_all.Count;
-    check_map_point=[check_map_point; [map_points_keyframe1, keyframe1]];
+    %check_map_point=[check_map_point; [map_points_keyframe1, keyframe1]];
     count=0;
     for j=i+1:num_key_frames
         keyframe2=vs.Views.ViewId(j);
@@ -54,17 +54,17 @@ while(1)
         [match_map_points,~]=size(matches);
 
 
-        check_match_map_point=[check_match_map_point; [match_map_points,keyframe1,keyframe2]];
+        %check_match_map_point=[check_match_map_point; [match_map_points,keyframe1,keyframe2]];
 
 
-        if ((match_map_points/map_points_keyframe1)*100 >= 0.9*map_points_keyframe1)
+        if ((match_map_points/map_points_keyframe1) >= Params.cullingThreshold*map_points_keyframe1)
             count=count+1;
         end
         flag_del=0;
         if(count==3)
             vs = vs.deleteKeyFrame(keyframe1);
-            i=i;
             flag_del=1;
+            fprintf('[!] Delete frame %d', keyframe1)
             break;
         end
     end

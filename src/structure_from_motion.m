@@ -17,15 +17,17 @@ matchedPoints2 = validPoints_curr(matchedIdx(:, 2));
 [relativeOrient, relativeLoc, inlierIdx, status] = estimate_relative_motion(...
     matchedPoints1, matchedPoints2, Params.cameraParams);
 
+bow = calc_bow_repr(features_curr, Params.kdtree, Params.numCodewords);
 k = Map.covisibilityGraph.NumViews + 1;
-Map.covisibilityGraph = addView(Map.covisibilityGraph, k, features_curr, validPoints_curr, 'Points', validPoints_curr);
-Map.covisibilityGraph = addConnection(Map.covisibilityGraph, k - 1, k, 'Matches', matchedIdx(inlierIdx,:));
+Map.covisibilityGraph = addView(Map.covisibilityGraph, k, ...
+    features_curr, validPoints_curr, ...
+    bow, 'Points', validPoints_curr);
 
 pose_km1 = poses(Map.covisibilityGraph, k - 1);
 orient_km1 = pose_km1.Orientation{1};
 loc_km1 = pose_km1.Location{1};
 
-if status == 1
+if status == 1 && Map.covisibilityGraph.NumViews > 2
     pose_km2 = poses(Map.covisibilityGraph, k - 2);
     orient_km2 = pose_km2.Orientation{1};
     loc_km2 = pose_km2.Location{1};
@@ -34,9 +36,10 @@ if status == 1
     relativeLoc = (loc_km1 - loc_km2) * orient_km2';
 end
 
-ne = size(Map.covisibilityGraph.Connections, 1);
-Map.vOdom.rot{ne} = relativeOrient;
-Map.vOdom.trans{ne} = relativeLoc;
+Map.covisibilityGraph = addConnection(Map.covisibilityGraph, k - 1, k, ...
+    'Matches', matchedIdx(inlierIdx,:), ...
+    'Orientation', relativeOrient, ...
+    'Location', relativeLoc);
 
 orientation = relativeOrient * orient_km1;
 location = loc_km1 + relativeLoc * orient_km1;
@@ -46,8 +49,6 @@ orientation = U * V';
 
 Map.covisibilityGraph = updateView(Map.covisibilityGraph, k, ...
     'Orientation', orientation, 'Location', location);
-
-Map.bow(k, :) = calc_bow_repr(features_curr, Params.kdtree, Params.numCodewords);
 
 % Connect every past view to the current view
 for i = max(k - Params.numViewsToLookBack, 1):k-2
@@ -104,10 +105,10 @@ matchedPoints2 = points2(matchedIdx(:, 2));
 
 if size(matchedIdx,1) >= minNumMatches && status == 0
     Map.covisibilityGraph = addConnection(Map.covisibilityGraph, ...
-        viewIdx1, viewIdx2, 'Matches', matchedIdx(inlierIdx,:));
+        viewIdx1, viewIdx2, ...
+        'Matches', matchedIdx(inlierIdx,:), ...
+        'Orientation', relativeOrient, ...
+        'Location', relativeLoc);
     
-    ne = size(Map.covisibilityGraph.Connections, 1);
-    Map.vOdom.rot{ne} = relativeOrient;
-    Map.vOdom.trans{ne} = relativeLoc;
 end
 end

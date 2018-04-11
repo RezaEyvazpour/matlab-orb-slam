@@ -6,7 +6,7 @@ clc;
 
 isPlot = true;
 
-sequence = 1;
+sequence = 0;
 
 imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
 imageExt = '.png';
@@ -52,7 +52,7 @@ Map.keyFrames = [];
 Map.covisibilityGraph = ourViewSet();
 	% An undirected graph where nodes are keyframes and edges are shared
 	% observations of map points (at least theta)
-	
+
 Map.spanningTree = []; % Subset of the essential graph that contains edges with high covisability (theta_min)
 
 global State;
@@ -69,6 +69,9 @@ Params.minMatchesForConnection = 50;
 % ADD angle threshold between v and n
 % ADD scale invariance region - perhaps set from data set
 
+Params.cullingSkip = 25;
+Params.cullingThreshold = 0.5;
+
 Params.kdtree = KDTreeSearcher(codewords);
 Params.numCodewords = size(codewords, 1);
 Params.numFramesApart = 20;
@@ -76,7 +79,7 @@ Params.numFramesApart = 20;
 Params.numViewsToLookBack = 5;
 Params.minMatchRatioRatio = 0.4;
 
-Params.numSkip = 2;
+Params.numSkip = 3;
 
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
@@ -93,38 +96,27 @@ for i = 1:length(framesToConsider)
 	frames{i} = imread([imagesFiles(frameIdx).folder, filesep, imagesFiles(frameIdx).name]);
 end
 
-Map.bow = zeros(length(framesToConsider), 64);
-Map.vOdom.rot = {};
-Map.vOdom.trans = {};
-
 for i = 1:length(framesToConsider)
-	
+
 	if iscell(frames)
 		frame = frames{i};
 	else
 		frame = frames(i);
 	end
-	
-	orb_slam(frame);
-    
+
+	surf_slam(frame);
+
     fprintf('Sequence %02d [%4d/%4d]\n', ...
         sequence, i, length(framesToConsider))
 end
 
-save([num2str(sequence, 'data/0409_seq%02d'), ...
+save([num2str(sequence, 'data/0411_seq%02d'), ...
     num2str(Params.numSkip, '_skip%d.mat')], 'Map')
-%% full BA
-camPoses = poses(Map.covisibilityGraph);
-%{
-tracks = findTracks(Map.covisibilityGraph);
-xyzPoints = triangulateMultiview(tracks, camPoses, Params.cameraParams);
-[xyzPoints, camPoses, reprojectionErrors] = bundleAdjustment(xyzPoints, ...
-        tracks, camPoses, Params.cameraParams, 'FixedViewId', 1, ...
-        'PointsUndistorted', true);
-%}
 
 %% Display
+
 if isPlot
+    camPoses = poses(Map.covisibilityGraph);
 	figure
 	hold on
 	traj = cell2mat(camPoses.Location);
@@ -133,7 +125,7 @@ if isPlot
     plot(x, z, 'x-')
     axis equal
 	grid on
-    
+
     %{
 	validIdx = sqrt(xyzPoints(:, 1).^2 + xyzPoints(:, 2).^2 + xyzPoints(:, 3).^2) < 100;
 	validIdx = validIdx & (xyzPoints(:, 3) > 0);
@@ -141,7 +133,7 @@ if isPlot
 	pcshow(xyzPoints(validIdx, :), 'VerticalAxis', 'y', 'VerticalAxisDir', 'down', ...
 		'MarkerSize', 45);
     %}
-    
+
     %validIdx = sqrt(xyzPoints(:, 1).^2 + xyzPoints(:, 2).^2 + xyzPoints(:, 3).^2) < 500;
     %scatter(xyzPoints(validIdx, 1), xyzPoints(validIdx, 3), '.')
 	hold off;
