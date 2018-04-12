@@ -1,4 +1,4 @@
-function features_curr = structure_from_motion(frame_prev, frame_curr)
+function features_curr = structure_from_motion(frame_prev, frame_curr,k)
 
 global Map
 global State
@@ -18,7 +18,7 @@ matchedPoints2 = validPoints_curr(matchedIdx(:, 2));
     matchedPoints1, matchedPoints2, Params.cameraParams);
 
 bow = calc_bow_repr(features_curr, Params.kdtree, Params.numCodewords);
-k = Map.covisibilityGraph.NumViews + 1;
+%k = Map.covisibilityGraph.NumViews + 1;
 Map.covisibilityGraph = addView(Map.covisibilityGraph, k, ...
     features_curr, validPoints_curr, ...
     bow, 'Points', validPoints_curr);

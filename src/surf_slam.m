@@ -1,4 +1,4 @@
-function surf_slam(frame_curr)
+function surf_slam(frame_curr,k)
 
 global Map
 global State
@@ -8,12 +8,12 @@ global Debug
 persistent frame_prev
 if ~isempty(frame_prev)
 
-    structure_from_motion(frame_prev, frame_curr);
+    structure_from_motion(frame_prev, frame_curr,k);
 
     % disp('Before keyframe culling')
     % disp(Map.covisibilityGraph.NumViews);
-	if mod(Map.covisibilityGraph.NumViews, Params.cullingSkip) == 0
-        %local_mapping();
+	if mod(k, Params.cullingSkip) == 0
+        local_mapping();
     end
     % disp('After keyframe culling')
     % disp(Map.covisibilityGraph.NumViews);

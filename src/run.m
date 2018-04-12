@@ -70,7 +70,7 @@ Params.minMatchesForConnection = 50;
 % ADD scale invariance region - perhaps set from data set
 
 Params.cullingSkip = 25;
-Params.cullingThreshold = 0.5;
+Params.cullingThreshold = 0.1;
 
 Params.kdtree = KDTreeSearcher(codewords);
 Params.numCodewords = size(codewords, 1);
@@ -80,7 +80,7 @@ Params.numViewsToLookBack = 5;
 Params.minMatchRatioRatio = 0.4;
 
 Params.numSkip = 3;
-
+Params.deletedframes = [];
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;
 Debug.displayFeaturesOnImages = false;
@@ -104,7 +104,7 @@ for i = 1:length(framesToConsider)
 		frame = frames(i);
 	end
 
-	surf_slam(frame);
+	surf_slam(frame,i);
 
     fprintf('Sequence %02d [%4d/%4d]\n', ...
         sequence, i, length(framesToConsider))

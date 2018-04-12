@@ -1,6 +1,6 @@
 clc
 %%
-data = load('0409_seq00_skip3.mat');
+data = load('0411_seq00_skip3.mat');
 
 vs = data.Map.covisibilityGraph;
 
@@ -32,7 +32,7 @@ end
 numConnections = size(vs.Connections, 1);
 odom = zeros(numConnections, 7);
 for k = 1:numConnections
-    R = data.Map.vOdom.rot{k};
+    R = vs.Connections.RelativeOrientation{k};
     u = [R(3, 2) - R(2, 3)
         R(1, 3) - R(3, 1)
         R(2, 1) - R(1, 2)];
@@ -44,7 +44,7 @@ for k = 1:numConnections
         u = zeros(3, 1);
     end
         
-    t = data.Map.vOdom.trans{k};
+    t = vs.Connections.RelativeLocation{k};
     
     if norm(t) == 0
         fprintf('%d, %d\n', vs.Connections.ViewId1(k), vs.Connections.ViewId2(k))
@@ -74,8 +74,8 @@ A((7 * numConnections + 1):end, 1:7) = eye(7);
 b = zeros(7 * (numConnections + 1), 1);
 for i = 1:50
     for k = 1:numConnections
-        idx1 = vs.Connections.ViewId1(k);
-        idx2 = vs.Connections.ViewId2(k);
+        idx1 = find(vs.Views.ViewId==vs.Connections.ViewId1(k));
+        idx2 = find(vs.Views.ViewId==vs.Connections.ViewId2(k));
 
         if idx1 == 1
             p1 = randn(7, 1) * 1e-8;
@@ -87,9 +87,9 @@ for i = 1:50
         J = calc_measurement_jacob(p1, p2);
 
         A((7 * k - 6):(7 * k), (7 * idx1 - 6):(7 * idx1)) = ...
-            J(:, 1:7);
+            A((7 * k - 6):(7 * k), (7 * idx1 - 6):(7 * idx1))+J(:, 1:7);
         A((7 * k - 6):(7 * k), (7 * idx2 - 6):(7 * idx2)) = ...
-            J(:, 8:14);
+           A((7 * k - 6):(7 * k), (7 * idx2 - 6):(7 * idx2))+ J(:, 8:14);
 
         odom_hat = calc_odom(p1, p2);
         
@@ -113,7 +113,7 @@ for i = 1:50
 end
 
 %%
-order = colamd(A);
+order = colamd(A)
 L = chol(A(:, order)' * A(:, order));
 figure(1)
 spy(L)
@@ -122,8 +122,10 @@ print('R.png', '-r300', '-dpng')
 %%
 figure(10)
 clf()
-idx1 = vs.Connections.ViewId1;
-idx2 = vs.Connections.ViewId2;
+idx1 = find(vs.Views.ViewId==vs.Connections.ViewId1(k));
+idx2 = find(vs.Views.ViewId==vs.Connections.ViewId2(k));
+%idx1 = vs.Connections.ViewId1;
+%idx2 = vs.Connections.ViewId2;
 plot(...
     [poses(idx1, 5)'; poses(idx2, 5)'], ...
     [poses(idx1, 7)'; poses(idx2, 7)'], 'r')
