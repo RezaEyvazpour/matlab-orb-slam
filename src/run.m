@@ -70,7 +70,7 @@ Params.minMatchesForConnection = 50;
 % ADD scale invariance region - perhaps set from data set
 
 Params.cullingSkip = 25;
-Params.cullingThreshold = 0.1;
+Params.cullingThreshold = 0.9;
 
 Params.kdtree = KDTreeSearcher(codewords);
 Params.numCodewords = size(codewords, 1);
@@ -110,7 +110,7 @@ for i = 1:length(framesToConsider)
         sequence, i, length(framesToConsider))
 end
 
-save([num2str(sequence, 'data/0411_seq%02d'), ...
+save([num2str(sequence, 'data/0412_seq%02d'), ...
     num2str(Params.numSkip, '_skip%d.mat')], 'Map')
 
 %% Display

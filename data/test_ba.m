@@ -87,9 +87,9 @@ for i = 1:50
         J = calc_measurement_jacob(p1, p2);
 
         A((7 * k - 6):(7 * k), (7 * idx1 - 6):(7 * idx1)) = ...
-            A((7 * k - 6):(7 * k), (7 * idx1 - 6):(7 * idx1))+J(:, 1:7);
+            J(:, 1:7);
         A((7 * k - 6):(7 * k), (7 * idx2 - 6):(7 * idx2)) = ...
-           A((7 * k - 6):(7 * k), (7 * idx2 - 6):(7 * idx2))+ J(:, 8:14);
+           J(:, 8:14);
 
         odom_hat = calc_odom(p1, p2);
         
@@ -113,15 +113,17 @@ for i = 1:50
 end
 
 %%
-order = colamd(A)
-L = chol(A(:, order)' * A(:, order));
-figure(1)
-spy(L)
-print('R.png', '-r300', '-dpng')
+% order = colamd(A);
+% %L = chol(A(:, order)' * A(:, order));
+% L = chol(A' * A);
+% figure(1)
+% spy(L)
+% print('R.png', '-r300', '-dpng')
 
 %%
 figure(10)
 clf()
+%for k = 1:numConnections 
 idx1 = find(vs.Views.ViewId==vs.Connections.ViewId1(k));
 idx2 = find(vs.Views.ViewId==vs.Connections.ViewId2(k));
 %idx1 = vs.Connections.ViewId1;
@@ -131,12 +133,14 @@ plot(...
     [poses(idx1, 7)'; poses(idx2, 7)'], 'r')
 hold on
 
+
 plot(poses(:, 5), poses(:, 7), 'k.-')
 axis equal
 print('before_lc.png', '-r300', '-dpng')
 
 figure(11)
 clf()
+
 plot(...
     [poses_opt(idx1, 5)'; poses_opt(idx2, 5)'], ...
     [poses_opt(idx1, 7)'; poses_opt(idx2, 7)'], 'r')
