@@ -168,9 +168,9 @@ legend({'Ground Truth', 'Result'}, 'location', 'best')
 title(num2str(seq, 'Sequence %02d'))
 
 delta = xyz_opt - xyz_gt;
-err = sqrt(delta(1, :).^2 + delta(2, :).^2 + delta(3, :).^2);
-fprintf('Results for sequence %02d:\nmean(error) = %.4f\nstd(error) = %.4f\n', ...
-    seq, mean(err), std(err))
+err = sqrt(mean(delta(1, :).^2 + delta(2, :).^2 + delta(3, :).^2));
+fprintf('Results for sequence %02d:\nRMSE = %.4f\n', ...
+    seq, err)
 print(num2str(seq, 'seq%02d_result.png'), '-r300', '-dpng')
 
 %%
