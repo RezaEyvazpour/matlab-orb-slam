@@ -12,9 +12,9 @@ if ~isempty(frame_prev)
 
     % disp('Before keyframe culling')
     % disp(Map.covisibilityGraph.NumViews);
-	if mod(k, Params.cullingSkip) == 0
-        local_mapping();
-    end
+% 	if mod(k, Params.cullingSkip) == 0
+%         local_mapping();
+%     end
     % disp('After keyframe culling')
     % disp(Map.covisibilityGraph.NumViews);
 	loop_closing();

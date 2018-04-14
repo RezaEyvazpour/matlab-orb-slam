@@ -6,7 +6,7 @@ clc;
 
 isPlot = true;
 
-sequence = 0;
+sequence = 5;
 
 imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
 imageExt = '.png';
@@ -79,7 +79,7 @@ Params.numFramesApart = 20;
 Params.numViewsToLookBack = 5;
 Params.minMatchRatioRatio = 0.4;
 
-Params.numSkip = 3;
+Params.numSkip = 2;
 Params.deletedframes = [];
 % Don't know if we'll like it, figured I'd ask - Audrow
 global Debug;

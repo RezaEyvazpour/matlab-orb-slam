@@ -1,10 +1,11 @@
 clc
 %%
-data = load('0411_seq00_skip3.mat');
+seq = 0;
+data = load(num2str(seq, '0412_seq%02d_skip2.mat'));
 
 vs = data.Map.covisibilityGraph;
 
-cameraParams = load_camera_params('dataset/sequences/00/calib.txt', 0);
+numIter = 20;
 
 %%
 numPoses = size(vs.Views, 1);
@@ -57,25 +58,19 @@ for k = 1:numConnections
 end
 
 %%
-%{
-f = @(xx)calc_cost(xx, odom, vs.Connections);
-options = optimoptions(@lsqnonlin, ...
-    'Algorithm', 'levenberg-marquardt', ...
-    'FunctionTolerance', 1e-3, ...
-    'MaxIterations', 100, ...
-    'Display', 'iter');
-p0 = reshape(poses, [numel(poses), 1]);
-poses2 = lsqnonlin(f, p0, -inf, inf, options);
-%}
-%%
 poses_opt = poses;
 A = sparse(7 * (numConnections + 1), 7 * numPoses);
 A((7 * numConnections + 1):end, 1:7) = eye(7);
 b = zeros(7 * (numConnections + 1), 1);
-for i = 1:50
+disp('Optimizing ...')
+for i = 1:numIter
+    fprintf('[%2d/%2d]\n', i, numIter)
     for k = 1:numConnections
-        idx1 = find(vs.Views.ViewId==vs.Connections.ViewId1(k));
-        idx2 = find(vs.Views.ViewId==vs.Connections.ViewId2(k));
+        %idx1 = find(vs.Views.ViewId==vs.Connections.ViewId1(k));
+        %idx2 = find(vs.Views.ViewId==vs.Connections.ViewId2(k));
+        
+        idx1 = vs.Connections.ViewId1(k);
+        idx2 = vs.Connections.ViewId2(k);
 
         if idx1 == 1
             p1 = randn(7, 1) * 1e-8;
@@ -113,21 +108,25 @@ for i = 1:50
 end
 
 %%
-% order = colamd(A);
-% %L = chol(A(:, order)' * A(:, order));
-% L = chol(A' * A);
-% figure(1)
-% spy(L)
-% print('R.png', '-r300', '-dpng')
+order = colamd(A);
+L_reordered = chol(A(:, order)' * A(:, order));
+L_original = chol(A' * A);
+figure(1)
+set(gcf, 'position', [100, 100, 800, 400])
+subplot(1, 2, 1)
+spy(L_original)
+subplot(1, 2, 2)
+spy(L_reordered)
+print(num2str(seq, 'seq%02d_R.png'), '-r300', '-dpng')
 
 %%
 figure(10)
 clf()
 %for k = 1:numConnections 
-idx1 = find(vs.Views.ViewId==vs.Connections.ViewId1(k));
-idx2 = find(vs.Views.ViewId==vs.Connections.ViewId2(k));
-%idx1 = vs.Connections.ViewId1;
-%idx2 = vs.Connections.ViewId2;
+%idx1 = find(vs.Views.ViewId==vs.Connections.ViewId1(k));
+%idx2 = find(vs.Views.ViewId==vs.Connections.ViewId2(k));
+idx1 = vs.Connections.ViewId1;
+idx2 = vs.Connections.ViewId2;
 plot(...
     [poses(idx1, 5)'; poses(idx2, 5)'], ...
     [poses(idx1, 7)'; poses(idx2, 7)'], 'r')
@@ -136,7 +135,7 @@ hold on
 
 plot(poses(:, 5), poses(:, 7), 'k.-')
 axis equal
-print('before_lc.png', '-r300', '-dpng')
+print(num2str(seq, 'seq%02d_before_lc.png'), '-r300', '-dpng')
 
 figure(11)
 clf()
@@ -146,9 +145,34 @@ plot(...
     [poses_opt(idx1, 7)'; poses_opt(idx2, 7)'], 'r')
 plot(poses_opt(:, 5), poses_opt(:, 7), 'k.-')
 axis equal
-print('after_lc.png', '-r300', '-dpng')
+print(num2str(seq, 'seq%02d_after_lc.png'), '-r300', '-dpng')
 
-%plot(poses2(:, 5), poses2(:, 7))
+%%
+poses_gt = load_gt_poses(seq);
+xyz_gt = poses_gt(1:2:end, :, 4)';
+
+xyz_opt = poses_opt(:, 5:7)';
+
+T = reprojection(xyz_opt, xyz_gt, 1);
+
+xyz_opt = T(1:3, 1:3) * xyz_opt + T(1:3, 4);
+
+figure(2)
+plot(xyz_gt(1, :), xyz_gt(3, :), 'g', ...
+    xyz_opt(1, :), xyz_opt(3, :), 'k', ...
+    'linewidth', 2)
+axis equal
+axis(axis() + [-1, 1, -1, 1] * 10)
+legend({'Ground Truth', 'Result'}, 'location', 'best')
+title(num2str(seq, 'Sequence %02d'))
+
+delta = xyz_opt - xyz_gt;
+err = sqrt(delta(1, :).^2 + delta(2, :).^2 + delta(3, :).^2);
+fprintf('Results for sequence %02d:\nmean(error) = %.4f\nstd(error) = %.4f\n', ...
+    seq, mean(err), std(err))
+print(num2str(seq, 'seq%02d_result.png'), '-r300', '-dpng')
+
+%%
 %{
 for k = 1:numPoses
     R = vs.Views.Orientation{k}';

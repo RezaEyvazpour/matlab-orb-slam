@@ -20,7 +20,6 @@ options = optimoptions('lsqnonlin','Display','iter');
 options.Algorithm = 'levenberg-marquardt';
 func = @(x) distance3D(x,y_est,y_gnd);
 [x,resnorm,residual,exitflag,output] = lsqnonlin(func,x0,[],[],options);
-x
 s1 = x(1);
 alpha = x(2);
 beta = x(3);
@@ -36,7 +35,6 @@ if allowTranslation
     x0 = [1,0,0,0,0,0,0];
     func = @(x) distanceTrans(x,y_est,y_gnd);
     [x,resnorm,residual,exitflag,output] = lsqnonlin(func,x0,[],[],options);
-    x
     s1 = x(1);
     alpha = x(2);
     beta = x(3);
