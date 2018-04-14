@@ -6,7 +6,7 @@ clc;
 
 isPlot = true;
 
-sequence = 5;
+sequence = 0;
 
 imageDir = ['dataset' filesep 'sequences' filesep num2str(sequence,'%02d') filesep 'image_0'];
 imageExt = '.png';
@@ -31,29 +31,7 @@ codewords = codewords.codewords;
 %% Setup Global variables
 
 global Map;
-Map.mapPoints = [];
-	% Contains
-	%	1) pose3D
-	%	2) viewing direction (average of all viewing directions)
-	%	3) Descriptor
-	%	4) dmax and dmin, determined by invariance limits of SURF
-	% and (I suggest) number of times observed (for viewing direction)
-	%
-	% Make a function to create new mapPoints
-
-Map.keyFrames = [];
-	% Contains
-	%	1) Camera pose T_iw: rigid body transformation from world to camera
-	%	2) Camera intrinsics: focal length, principal point)
-	%	3) All features extracted in that frame, associated with or not to a map point
-	%
-	% Make a function to create new keyFrames
-
 Map.covisibilityGraph = ourViewSet();
-	% An undirected graph where nodes are keyframes and edges are shared
-	% observations of map points (at least theta)
-
-Map.spanningTree = []; % Subset of the essential graph that contains edges with high covisability (theta_min)
 
 global State;
 State.mu = [0;0;0];
@@ -81,7 +59,7 @@ Params.minMatchRatioRatio = 0.4;
 
 Params.numSkip = 2;
 Params.deletedframes = [];
-% Don't know if we'll like it, figured I'd ask - Audrow
+
 global Debug;
 Debug.displayFeaturesOnImages = false;
 
@@ -110,7 +88,7 @@ for i = 1:length(framesToConsider)
         sequence, i, length(framesToConsider))
 end
 
-save([num2str(sequence, 'data/0412_seq%02d'), ...
+save([num2str(sequence, 'data/seq%02d'), ...
     num2str(Params.numSkip, '_skip%d.mat')], 'Map')
 
 %% Display
@@ -138,3 +116,5 @@ if isPlot
     %scatter(xyzPoints(validIdx, 1), xyzPoints(validIdx, 3), '.')
 	hold off;
 end
+
+optimize_graph;

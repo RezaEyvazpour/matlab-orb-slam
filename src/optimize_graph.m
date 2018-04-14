@@ -1,7 +1,7 @@
 clc
 %%
 seq = 0;
-data = load(num2str(seq, '0412_seq%02d_skip2.mat'));
+data = load(num2str(seq, 'seq%02d_skip2.mat'));
 
 vs = data.Map.covisibilityGraph;
 
@@ -150,6 +150,7 @@ print(num2str(seq, 'seq%02d_after_lc.png'), '-r300', '-dpng')
 %%
 poses_gt = load_gt_poses(seq);
 xyz_gt = poses_gt(1:2:end, :, 4)';
+xyz_gt = xyz_gt(:,1:length(xyz_opt));
 
 xyz_opt = poses_opt(:, 5:7)';
 
