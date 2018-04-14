@@ -98,7 +98,7 @@ for iter = 1:100
     
     %% Get p1, the matching points from the target cloud
     match = 1:1:length(p_s);
-    for i_s=1:length(p_s);
+    for i_s=1:length(p_s)
              dis=p_t(:,i_s)-p_s(:,i_s);
              dis=norm(dis,2);
             min_dist(i_s)=dis;
